@@ -9,7 +9,7 @@ const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 // ✅ Allow both local dev + deployed frontend
 const allowedOrigins = [
   'http://localhost:5173',                  // local Vite dev
-  'https://salon-frontend.onrender.com'     // deployed frontend (update with your URL)
+  'https://salon-app-frontend.onrender.com' // deployed frontend
 ];
 
 app.use(cors({
@@ -17,6 +17,7 @@ app.use(cors({
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
+       console.warn(`CORS blocked: ${origin}`);
       callback(new Error('Not allowed by CORS'));
     }
   }
@@ -46,8 +47,8 @@ app.post('/create-checkout-session', async (req, res) => {
         }
       ],
       // ✅ Use frontend Render domain here
-      success_url: 'https://salon-frontend.onrender.com/success.html',
-      cancel_url: 'https://salon-frontend.onrender.com/cancel.html'
+      success_url: 'https://salon-app-frontend.onrender.com/success.html',
+      cancel_url: 'https://salon-app-frontend.onrender.com/cancel.html'
     });
 
     res.json({ id: session.id });
