@@ -47,8 +47,8 @@ app.post('/create-checkout-session', async (req, res) => {
         }
       ],
       // ✅ Use frontend Render domain here
-      success_url: 'https://salon-app-1.onrender.com/success.html',
-      cancel_url: 'https://salon-app-1.onrender.com/cancel.html'
+      success_url: 'https://salon-app-1.onrender.com/success',
+      cancel_url: 'https://salon-app-1.onrender.com/cancel'
     });
 
     res.json({ id: session.id });

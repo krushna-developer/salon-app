@@ -1,7 +1,7 @@
 // src/App.jsx
-
 import React, { useEffect, useMemo, useState } from "react";
 import { loadStripe } from "@stripe/stripe-js";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 // Import Components
 import TopBar from "./components/TopBar";
@@ -12,17 +12,18 @@ import DateTimeStep from "./components/DateTimeStep";
 import ReviewCard from "./components/ReviewCard";
 import PaymentPane from "./components/PaymentPane";
 
+// Pages
+import Success from "./pages/Success";
+import Cancel from "./pages/Cancel";
+
 // Stripe Initialization
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
+
 // API Configuration
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
 let baseUrl = API_BASE_URL || "";
 
-export default function App() {
-  // ⚙️ Settings
-  
-
+function BookingFlow() {
   // 🔎 Filters
   const [query, setQuery] = useState("");
   const [city, setCity] = useState("");
@@ -47,6 +48,7 @@ export default function App() {
       ),
     [selectedServices, selectedSalon]
   );
+
   const amount = useMemo(
     () => selectedServicesList.reduce((a, s) => a + (s.price || 0), 0),
     [selectedServicesList]
@@ -129,14 +131,17 @@ export default function App() {
   };
   const handlePayment = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/create-checkout-session`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          amount,
-          serviceName: selectedServicesList.map((s) => s.name).join(", "),
-        }),
-      });
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/create-checkout-session`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            amount,
+            serviceName: selectedServicesList.map((s) => s.name).join(", "),
+          }),
+        }
+      );
       const data = await res.json();
       if (!data.id) throw new Error("No session id returned");
 
@@ -154,27 +159,31 @@ export default function App() {
       <>
         <Stepper step={step} />
 
-        {/* Search Bar is only visible on step 0 */}
+        {/* Step 0 – Search + Salon selection */}
         {step === 0 && (
-          <SearchBar
-            query={query}
-            setQuery={setQuery}
-            city={city}
-            setCity={setCity}
-            onlyTopRated={onlyTopRated}
-            setOnlyTopRated={setOnlyTopRated}
-          />
-        )}
-
-        {/* Step 0 – Choose Salon */}
-        {step === 0 && (
-          <div className="max-w-6xl mx-auto px-4 mt-6">
-            {loading && (
-              <div className="text-center text-gray-500 py-10">Loading salons…</div>
-            )}
-            {error && <div className="text-center text-red-600 py-2">{error}</div>}
-            {!loading && <SalonGrid salons={filtered} onSelect={proceedFromSalon} />}
-          </div>
+          <>
+            <SearchBar
+              query={query}
+              setQuery={setQuery}
+              city={city}
+              setCity={setCity}
+              onlyTopRated={onlyTopRated}
+              setOnlyTopRated={setOnlyTopRated}
+            />
+            <div className="max-w-6xl mx-auto px-4 mt-6">
+              {loading && (
+                <div className="text-center text-gray-500 py-10">
+                  Loading salons…
+                </div>
+              )}
+              {error && (
+                <div className="text-center text-red-600 py-2">{error}</div>
+              )}
+              {!loading && (
+                <SalonGrid salons={filtered} onSelect={proceedFromSalon} />
+              )}
+            </div>
+          </>
         )}
 
         {/* Step 1 – Date & Time */}
@@ -190,9 +199,15 @@ export default function App() {
                       className="w-20 h-20 object-cover rounded-xl"
                     />
                     <div>
-                      <div className="font-semibold text-lg">{selectedSalon?.name}</div>
-                      <div className="text-sm text-gray-600">{selectedSalon?.location}</div>
-                      <div className="text-xs text-gray-500">⭐ {selectedSalon?.rating}</div>
+                      <div className="font-semibold text-lg">
+                        {selectedSalon?.name}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        {selectedSalon?.location}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        ⭐ {selectedSalon?.rating}
+                      </div>
                     </div>
                   </div>
                   <DateTimeStep
@@ -267,8 +282,20 @@ export default function App() {
       </>
 
       <footer className="max-w-6xl mx-auto px-4 py-10 text-center text-xs text-gray-500">
-        Built by ❤️ Krushna 
+        Built by ❤️ Krushna
       </footer>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    
+      <Routes>
+        <Route path="/" element={<BookingFlow />} />
+        <Route path="/success" element={<Success />} />
+        <Route path="/cancel" element={<Cancel />} />
+      </Routes>
+    
   );
 }
