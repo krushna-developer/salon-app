@@ -1,22 +1,36 @@
-// server/index.js
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const Stripe = require('stripe');
 
 const app = express();
-const stripe = Stripe(process.env.STRIPE_SECRET_KEY); // set in .env
+const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
+
+// ✅ Allow both local dev + deployed frontend
+const allowedOrigins = [
+  'http://localhost:5173',                  // local Vite dev
+  'https://salon-frontend.onrender.com'     // deployed frontend (update with your URL)
+];
 
 app.use(cors({
-  origin: 'http://localhost:5173' // allow your vite dev server
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  }
 }));
+
 app.use(express.json());
 
 app.post('/create-checkout-session', async (req, res) => {
   try {
-    const { amount, serviceName } = req.body; // amount in whole rupees
+    const { amount, serviceName } = req.body; // amount in rupees
 
-    if (!amount || !serviceName) return res.status(400).json({ error: 'Missing amount/serviceName' });
+    if (!amount || !serviceName) {
+      return res.status(400).json({ error: 'Missing amount/serviceName' });
+    }
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -26,13 +40,14 @@ app.post('/create-checkout-session', async (req, res) => {
           price_data: {
             currency: 'inr',
             product_data: { name: serviceName },
-            unit_amount: Math.round(amount * 100) // convert rupees → paise
+            unit_amount: Math.round(amount * 100) // rupees → paise
           },
           quantity: 1
         }
       ],
-      success_url: 'http://localhost:5173/success.html',
-      cancel_url: 'http://localhost:5173/cancel.html'
+      // ✅ Use frontend Render domain here
+      success_url: 'https://salon-frontend.onrender.com/success.html',
+      cancel_url: 'https://salon-frontend.onrender.com/cancel.html'
     });
 
     res.json({ id: session.id });
@@ -43,4 +58,4 @@ app.post('/create-checkout-session', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 4242;
-app.listen(PORT, () => console.log(`Stripe server running on http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`Stripe server running on port ${PORT}`));
