@@ -9,7 +9,7 @@ const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 // ✅ Allow both local dev + deployed frontend
 const allowedOrigins = [
   'http://localhost:5173',                  // local Vite dev
-  "https://salon-app-1.onrender.com"       // deployed frontend
+  'https://salon-app-1.onrender.com' // deployed frontend
 ];
 
 app.use(cors({
